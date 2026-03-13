@@ -10,5 +10,6 @@
     "allowSyntheticDefaultImports": true,
     "types": ["svelte", "obsidian"]
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte"]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules"]
 }
