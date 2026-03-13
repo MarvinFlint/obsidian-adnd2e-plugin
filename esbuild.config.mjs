@@ -1,4 +1,6 @@
 import esbuild from "esbuild";
+import sveltePlugin from 'esbuild-svelte';
+import { sveltePreprocess } from 'svelte-preprocess';
 import process from "process";
 import { builtinModules } from 'node:module';
 
@@ -39,6 +41,11 @@ const context = await esbuild.context({
 	treeShaking: true,
 	outfile: "main.js",
 	minify: prod,
+	plugins: [
+		sveltePlugin({
+			preprocess: sveltePreprocess()
+		})
+	]
 });
 
 if (prod) {

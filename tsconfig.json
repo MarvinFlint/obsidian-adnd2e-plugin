@@ -6,6 +6,9 @@
     "moduleResolution": "node",
     "strict": true,
     "outDir": ".",
-    "rootDir": "src"
-  }
+    "rootDir": "src",
+    "allowSyntheticDefaultImports": true,
+    "types": ["svelte", "obsidian"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.svelte"]
 }
