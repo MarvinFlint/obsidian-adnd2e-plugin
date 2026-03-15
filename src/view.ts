@@ -17,6 +17,7 @@ export class CharacterSheetView extends FileView {
         if (this.file) {
             const content = await this.app.vault.read(this.file);
             fileData = JSON.parse(content);
+            console.log(fileData);
         }
 
         this.component = new CharacterSheet({

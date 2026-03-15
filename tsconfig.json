@@ -2,12 +2,13 @@
   "compilerOptions": {
     "target": "ES6",
     "lib": ["ES6", "DOM"],
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "strict": true,
     "outDir": ".",
     "rootDir": "src",
     "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": true,
     "types": ["svelte", "obsidian"]
   },
   "include": ["**/*.ts"],
