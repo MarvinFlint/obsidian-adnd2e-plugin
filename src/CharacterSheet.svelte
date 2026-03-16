@@ -16,12 +16,11 @@
     let characterBackground: string = fileData.characterBackground ?? '';
     let characterClasses: Array<any> = fileData.characterClasses ?? [];
 
-    
     let attributes: Array<any> = fileData.attributes ?? [
         { name: 'Strength', value: 10, abbr: 'STR' },
         { name: 'Dexterity', value: 10, abbr: 'DEX' },
         { name: 'Constitution', value: 10, abbr: 'CON' },
-        { name: 'Wisom', value: 10, abbr: 'WIS' },
+        { name: 'Wisdom', value: 10, abbr: 'WIS' },
         { name: 'Intelligence', value: 10, abbr: 'INT' },
         { name: 'Charisma', value: 10, abbr: 'CHA' },
     ];
@@ -82,7 +81,6 @@
 
     function openAddItemPanel() {
         const viewContainer = document.querySelector('.view-content');
-        console.log(viewContainer);
         if(!viewContainer) return;
         
         const wrapper = document.createElement('div');
@@ -98,8 +96,6 @@
 
         wrapper.append(buttons);
         viewContainer.append(wrapper);
-        console.log(wrapper);
-        
     }
 
     function closeAddItemPanel(){
@@ -219,156 +215,431 @@
     }
 </script>
 
-<main class="main">
-    <section id="character-info">
-        <div class="info-item character-basics">
-            <h2>Info</h2>
-            <label for="charactername">Name</label>
-            <input type="text" name="charactername" bind:value={ characterName } on:input={ saveData } />
-            <label for="characterage">Age</label>
-            <input type="number" name="characterage" bind:value={ characterAge } on:input={ saveData } />
-            <label for="characterweight">Weight</label>
-            <input type="number" name="characterweight" bind:value= { characterWeight } on:input={ saveData } />
-            <span>Total Weight: { totalWeight }</span>
-        </div>    
-        <div class="info-item character-background">
-            <h2>Background</h2>
-            <textarea bind:value={ characterBackground } on:input={ saveData } />
-        </div>   
-        <div class="info-item character-classes">
-            <h2>Classes</h2>
-            {#each characterClasses as characterClass, i}
-            <div class="characterClass">
-                <input type="number" bind:value={ characterClass.classLevel } on:input={ saveData } />
-                <select bind:value={ characterClass.className } on:change={ saveData }>
-                    {#each AVAILABLE_CLASSES as availableClass}
-                    <option value="{ availableClass }">{ availableClass }</option>
-                    {/each}
-                </select>
-                <button on:click={ () => removeCharacterClass(i) }>-</button>
+<main class="sheet">
+
+    <!-- ── HEADER ── -->
+    <header class="sheet-header">
+        <input class="name-input" type="text" placeholder="Character Name" bind:value={characterName} on:input={saveData} />
+        <div class="header-meta">
+            <div class="meta-pair">
+                <span class="meta-label">Age</span>
+                <input class="meta-input" type="number" bind:value={characterAge} on:input={saveData} />
             </div>
-            {/each}
-            <button on:click={ () => addCharacterClass() }>+</button>
-        </div>
-    </section>
-    <section id="attributes">
-        <h2>Stats</h2>
-        <ul class="attributes-list">
-            {#each attributes as attribute}
-            <li>
-                <label for="{ attribute.name }-attribute">{ attribute.abbr }</label>
-                <input type="number" name="{ attribute.name }-attribute" bind:value={ attribute.value } on:input={ saveData } />
-            </li>
-            {/each}
-        </ul>
-    </section>
-    <section id="proficiency">
-        <h2>Proficiencies</h2>
-        <div class="proficiency-section weapon-proficiency">
-            <h3>Weapons</h3>
-            <ul>
-                {#each weaponProficiencies as weaponProficiency, i}
-                <li class="weapon-proficiency">
-                    <input class="proficiency-input" type="text" placeholder="Name" bind:value= { weaponProficiency.name } on:input={ saveData } />
-                    <input class="proficiency-input" type="number" placeholder="# of Slots" bind:value= { weaponProficiency.slots } on:input={ saveData } />
-                    <input class="proficiency-input" type="text" placeholder="Source" bind:value= { weaponProficiency.source } on:input={ saveData } />
-                    <button on:click={ () => removeProficiency(i, weaponProficiency.type) }>-</button>
-                </li>
+            <div class="meta-pair">
+                <span class="meta-label">Weight</span>
+                <input class="meta-input" type="number" bind:value={characterWeight} on:input={saveData} />
+            </div>
+            <div class="meta-pair">
+                <span class="meta-label">Total</span>
+                <span class="meta-value">{totalWeight} lbs</span>
+            </div>
+            <div class="classes-inline">
+                {#each characterClasses as characterClass, i}
+                <div class="class-tag">
+                    <select bind:value={characterClass.className} on:change={saveData}>
+                        {#each AVAILABLE_CLASSES as availableClass}
+                        <option value={availableClass}>{availableClass}</option>
+                        {/each}
+                    </select>
+                    <input class="level-input" type="number" bind:value={characterClass.classLevel} on:input={saveData} />
+                    <button class="btn-remove" on:click={() => removeCharacterClass(i)}>×</button>
+                </div>
                 {/each}
-            </ul>
-            <button on:click={ () => addProficiency('weapon') }>+</button>
-        </div>
-        <div class="proficiency-section non-weapon-proficiency">
-            <h3>Non-Weapon</h3>
-            <ul>
-                {#each nonWeaponProficiencies as nonWeaponProficiency, i}
-                <li class="non-weapon-proficiency">
-                    <input class="proficiency-input" type="text" placeholder="Name" bind:value= { nonWeaponProficiency.name } on:input={ saveData } />
-                    <input class="proficiency-input" type="number" placeholder="# of Slots" bind:value= { nonWeaponProficiency.slots } on:input={ saveData } />
-                    <input class="proficiency-input" type="text" placeholder="Source" bind:value= { nonWeaponProficiency.source } on:input={ saveData } />
-                    <button on:click={ () => removeProficiency(i, nonWeaponProficiency.type) }>-</button>
-                </li>
-                {/each}                
-            </ul>
-            <button on:click={ () => addProficiency('non-weapon') }>+</button>
-        </div>
-    </section>
-    <section id="inventory">
-        <h2>Inventory</h2>
-        <span>Total Weight: { inventoryWeight }</span>
-        <ul>
-        {#each inventory as item}
-            <li class="item-entry">
-                <input class="item-input" type="text" placeholder="Name" bind:value={ item.name } on:input={ saveData } />
-                <input class="item-input" type="text" placeholder="Weight" bind:value={ item.weight } on:input={ saveData } />
-                <input class="item-input" type="number" placeholder="Quantity" bind:value={ item.quantity } on:input={ saveData } />
-                <input class="item-input" type="text" placeholder="Description" bind:value={ item.description } on:input={ saveData } />
-                {#if item.equippable}
-                <input type="checkbox" checked={ item.equipped } on:change={ () => item.equipped ? unequipItem(item) : equipItem(item) } />                {/if}
-            </li>
-        {/each}
-        </ul>    
-        <button on:click={ () => openAddItemPanel() }>+</button>    
-    </section>
-    <section id="equipment">
-        <h2>Equipment</h2>
-        {#each equippedItems as { slot, item }}
-            <div class="slot-entry">
-                <span class="slot-name">{slot}</span>
-                {#if item}
-                    <span>{item.name}</span>
-                    <button on:click={() => unequipItem(item)}>unequip</button>
-                {:else}
-                    <span class="empty">—</span>
-                {/if}
+                <button class="btn-add-inline" on:click={addCharacterClass}>+ Class</button>
             </div>
-        {/each}
-    </section>
+        </div>
+    </header>
+    <div class="sheet-body">
+        <div class="col-left">
+            <section class="panel">
+                <h3 class="panel-title">Attributes</h3>
+                <div class="attr-grid">
+                    {#each attributes as attribute}
+                    <div class="attr-block">
+                        <span class="attr-abbr">{attribute.abbr}</span>
+                        <input class="attr-input" type="number" bind:value={attribute.value} on:input={saveData} />
+                    </div>
+                    {/each}
+                </div>
+            </section>
+            <section class="panel">
+                <h3 class="panel-title">Equipment</h3>
+                <div class="equipment-list">
+                    {#each equippedItems as { slot, item }}
+                    <div class="slot-row">
+                        <span class="slot-label">{slot.replace('_', ' ')}</span>
+                        {#if item}
+                        <span class="slot-item-name">{item.name}</span>
+                        <button class="btn-unequip" on:click={() => unequipItem(item)}>−</button>
+                        {:else}
+                        <span class="slot-empty">—</span>
+                        {/if}
+                    </div>
+                    {/each}
+                </div>
+            </section>
+        </div>
+        <div class="col-right">
+            <section class="panel">
+                <h3 class="panel-title">Proficiencies</h3>
+                <div class="prof-columns">
+                    <div class="prof-group">
+                        <div class="prof-group-header">
+                            <span class="prof-group-label">Weapon</span>
+                            <button class="btn-add-inline" on:click={() => addProficiency('weapon')}>+</button>
+                        </div>
+                        {#each weaponProficiencies as prof, i}
+                        <div class="prof-row">
+                            <input class="prof-name" type="text" placeholder="Name" bind:value={prof.name} on:input={saveData} />
+                            <input class="prof-slots" type="number" placeholder="Slots" bind:value={prof.slots} on:input={saveData} />
+                            <input class="prof-source" type="text" placeholder="Source" bind:value={prof.source} on:input={saveData} />
+                            <button class="btn-remove" on:click={() => removeProficiency(i, prof.type)}>×</button>
+                        </div>
+                        {/each}
+                    </div>
+                    <div class="prof-group">
+                        <div class="prof-group-header">
+                            <span class="prof-group-label">Non-Weapon</span>
+                            <button class="btn-add-inline" on:click={() => addProficiency('non-weapon')}>+</button>
+                        </div>
+                        {#each nonWeaponProficiencies as prof, i}
+                        <div class="prof-row">
+                            <input class="prof-name" type="text" placeholder="Name" bind:value={prof.name} on:input={saveData} />
+                            <input class="prof-slots" type="number" placeholder="Slots" bind:value={prof.slots} on:input={saveData} />
+                            <input class="prof-source" type="text" placeholder="Source" bind:value={prof.source} on:input={saveData} />
+                            <button class="btn-remove" on:click={() => removeProficiency(i, prof.type)}>×</button>
+                        </div>
+                        {/each}
+                    </div>
+                </div>
+            </section>
+            <section class="panel">
+                <div class="panel-title-row">
+                    <h3 class="panel-title">Inventory</h3>
+                    <span class="weight-badge">{inventoryWeight} lbs</span>
+                    <button class="btn-add-inline" on:click={openAddItemPanel}>+ Item</button>
+                </div>
+                <div class="inventory-header-row">
+                    <span>Name</span>
+                    <span>Wt</span>
+                    <span>Qty</span>
+                    <span>Description</span>
+                    <span></span>
+                </div>
+                {#each inventory as item}
+                <div class="inventory-row">
+                    <input type="text" placeholder="Name" bind:value={item.name} on:input={saveData} />
+                    <input type="number" placeholder="0" bind:value={item.weight} on:input={saveData} />
+                    <input type="number" placeholder="1" bind:value={item.quantity} on:input={saveData} />
+                    <input type="text" placeholder="—" bind:value={item.description} on:input={saveData} />
+                    {#if item.equippable}
+                    <input type="checkbox" checked={item.equipped} on:change={() => item.equipped ? unequipItem(item) : equipItem(item)} />
+                    {:else}
+                    <span></span>
+                    {/if}
+                </div>
+                {/each}
+            </section>
+            <section class="panel">
+                <h3 class="panel-title">Background</h3>
+                <textarea class="background-area" bind:value={characterBackground} on:input={saveData} placeholder="Character history, notes, personality..."></textarea>
+            </section>
+        </div>
+    </div>
 </main>
 
-<style lang="scss">
-    main{
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    #character-info{
-        display: flex;
-        gap: 20px;
-    }
-    .character-basics{
+
+<style>
+    .sheet {
+        font-family: var(--font-interface);
+        font-size: var(--font-ui-small);
+        color: var(--text-normal);
+        padding: 16px;
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
-    }
-    .character-background
-    #attributes{
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        width: 150px;
-    }
-    .attributes-list{
-        li{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            input{
-                width: 40px;
-                text-align: center;
-            }
-        }        
-    }
-    .character-classes{
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
+        gap: 12px;
+        max-width: 960px;
     }
 
-    ul{
-        list-style-type: none;
+    input, select, textarea {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+        font-family: var(--font-interface);
+        font-size: var(--font-ui-small);
+        padding: 2px 4px;
+        outline: none;
+        width: 100%;
+    }
+    input:focus, select:focus, textarea:focus {
+        border-bottom-color: var(--interactive-accent);
+    }
+    input[type="checkbox"] {
+        width: auto;
+        border: none;
+        cursor: pointer;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+    }
+    .sheet-header {
+        border-bottom: 2px solid var(--interactive-accent);
+        padding-bottom: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .name-input {
+        font-size: var(--font-ui-larger);
+        font-weight: var(--font-semibold);
+        border-bottom: none;
         padding: 0;
+    }
+    .name-input::placeholder {
+        color: var(--text-faint);
+    }
+    .header-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+    }
+    .meta-pair {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .meta-label {
+        color: var(--text-muted);
+        font-size: var(--font-ui-smaller);
+        white-space: nowrap;
+    }
+    .meta-input {
+        width: 48px;
+    }
+    .meta-value {
+        color: var(--text-accent);
+        font-weight: var(--font-semibold);
+    }
+    .classes-inline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        margin-left: auto;
+    }
+    .class-tag {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+        border-radius: var(--radius-s);
+        padding: 2px 6px;
+    }
+    .class-tag select {
+        border: none;
+        width: auto;
+    }
+    .level-input {
+        width: 32px;
+        text-align: center;
+        font-weight: var(--font-semibold);
+    }
+
+    .sheet-body {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 12px;
+        align-items: start;
+    }
+    .panel {
+        border: 1px solid var(--background-modifier-border);
+        border-radius: var(--radius-m);
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .panel-title {
+        font-size: var(--font-ui-smaller);
+        font-weight: var(--font-semibold);
+        color: var(--text-muted);
+        margin: 0 0 4px 0;
+        border-bottom: 1px solid var(--background-modifier-border);
+        padding-bottom: 4px;
+    }
+    .panel-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid var(--background-modifier-border);
+        padding-bottom: 4px;
+        margin-bottom: 4px;
+    }
+    .panel-title-row .panel-title {
+        border: none;
+        padding: 0;
+        margin: 0;
+    }
+    .weight-badge {
+        font-size: var(--font-ui-smaller);
+        color: var(--text-accent);
+        margin-right: auto;
+    }
+
+    .attr-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+    .attr-block {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .attr-abbr {
+        font-size: var(--font-ui-smaller);
+        font-weight: var(--font-semibold);
+        color: var(--text-muted);
+        width: 28px;
+        flex-shrink: 0;
+    }
+    .attr-input {
+        width: 40px;
+        text-align: center;
+        font-weight: var(--font-semibold);
+        font-size: var(--font-ui-medium);
+    }
+
+    .equipment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .slot-row {
+        display: grid;
+        grid-template-columns: 72px 1fr auto;
+        align-items: center;
+        gap: 6px;
+        min-height: 20px;
+    }
+    .slot-label {
+        font-size: var(--font-ui-smaller);
+        color: var(--text-muted);
+    }
+    .slot-item-name {
+        color: var(--text-normal);
+    }
+    .slot-empty {
+        color: var(--text-faint);
+    }
+
+    .prof-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .prof-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .prof-group-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2px;
+    }
+    .prof-group-label {
+        font-size: var(--font-ui-smaller);
+        font-weight: var(--font-semibold);
+        color: var(--text-muted);
+    }
+    .prof-row {
+        display: grid;
+        grid-template-columns: 1fr 36px 64px auto;
+        gap: 4px;
+        align-items: center;
+    }
+    .prof-slots {
+        text-align: center;
+    }
+
+    .inventory-header-row {
+        display: grid;
+        grid-template-columns: 1fr 44px 44px 1fr 20px;
+        gap: 4px;
+        font-size: var(--font-ui-smaller);
+        color: var(--text-faint);
+        padding: 0 4px;
+    }
+    .inventory-row {
+        display: grid;
+        grid-template-columns: 1fr 44px 44px 1fr 20px;
+        gap: 4px;
+        align-items: center;
+        border-bottom: 1px solid var(--background-modifier-border-hover);
+        padding: 2px 4px;
+    }
+    .inventory-row:last-child {
+        border-bottom: none;
+    }
+
+    .background-area {
+        resize: vertical;
+        min-height: 80px;
+        border: none;
+        border-bottom: none;
+        font-size: var(--font-ui-small);
+        line-height: var(--line-height-normal);
+        width: 100%;
+        padding: 4px;
+    }
+
+    .btn-remove {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0 4px;
+        font-size: var(--font-ui-medium);
+        line-height: 1;
+        width: auto;
+    }
+    .btn-remove:hover {
+        color: var(--text-error);
+    }
+    .btn-add-inline {
+        background: none;
+        border: 1px solid var(--background-modifier-border);
+        border-radius: var(--radius-s);
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 2px 8px;
+        font-family: var(--font-interface);
+        font-size: var(--font-ui-smaller);
+        white-space: nowrap;
+        width: auto;
+    }
+    .btn-add-inline:hover {
+        border-color: var(--interactive-accent);
+        color: var(--interactive-accent);
+    }
+    .btn-unequip {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0 4px;
+        font-size: var(--font-ui-medium);
+        width: auto;
+    }
+    .btn-unequip:hover {
+        color: var(--text-error);
     }
 
     :global(.add-item-wrapper){
@@ -376,29 +647,71 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: var(--background-secondary);
+        background: var(--background-primary);
         border: 1px solid var(--background-modifier-border);
-        padding: var(--size-4-4);
+        border-radius: var(--radius-m);
+        padding: 20px;
         width: 60%;
         min-width: 400px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 12px;
+        font-family: var(--font-interface);
+        font-size: var(--font-ui-small);
+        z-index: 100;
+        box-shadow: var(--shadow-l);
     }
     :global(.add-item-wrapper .item-inputs){
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: 120px 1fr;
         align-items: center;
-        gap: 0.5rem 1rem;
+        gap: 6px 12px;
     }
     :global(.item-input-row){
         display: contents;
     }
+    :global(.add-item-wrapper label){
+        font-size: var(--font-ui-smaller);
+        color: var(--text-muted);
+    }
+    :global(.add-item-wrapper input),
+    :global(.add-item-wrapper select){
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--background-modifier-border);
+        color: var(--text-normal);
+        font-family: var(--font-interface);
+        font-size: var(--font-ui-small);
+        padding: 2px 4px;
+        outline: none;
+        width: 100%;
+    }
     :global(.create-item-buttons){
         display: flex;
         justify-content: space-between;
+        gap: 8px;
+        margin-top: 4px;
     }
-    :global(.create-item-buttons .cancel-button){
-        background: rgba(200, 0, 0, 0.8);
+    :global(.create-item-buttons button){
+        flex: 1;
+        padding: 6px 12px;
+        border: 1px solid var(--background-modifier-border);
+        border-radius: var(--radius-s);
+        background: transparent;
+        color: var(--text-normal);
+        font-family: var(--font-interface);
+        font-size: var(--font-ui-small);
+        cursor: pointer;
+    }
+    :global(.create-item-buttons .accept-button){
+        border-color: var(--interactive-accent);
+        color: var(--interactive-accent);
+    }
+    :global(.create-item-buttons .accept-button:hover){
+        background: var(--interactive-accent);
+        color: var(--on-accent);
+    }
+    :global(.create-item-buttons .cancel-button:hover){
+        background: var(--background-modifier-hover);
     }
 </style>
