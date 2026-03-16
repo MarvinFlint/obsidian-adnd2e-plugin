@@ -4,8 +4,8 @@ export const EQUIPMENT_SLOTS = [
     'body',
     'back',
     'gloves',
-    'left_hand',
-    'right_hand',
+    'off_hand',
+    'main_hand',
     'feet',
     'ring_left',
     'ring_right',
@@ -46,3 +46,22 @@ export const ITEM_FIELDS: FieldSchema[] = [
     { key: 'armorClass', label: 'Armor Class', type: 'number'},
     { key: 'magicBonus', label: 'Magic Bonus', type: 'number'}
 ];
+
+export type ProficiencyType = 'non-weapon' | 'weapon';
+
+export interface Proficiency {
+    name: string,
+    type: ProficiencyType,
+    slots: number
+    source: string | null
+}
+
+export const AVAILABLE_CLASSES: string[] = [    
+    'Fighter',
+    'Ranger',
+    'Cleric',
+    'Thief',
+    'Wizard',
+    'Druid',
+    'Paladin'
+]

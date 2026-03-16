@@ -1,8 +1,8 @@
 {
   "id": "and2e-character-sheet",
   "name": "ADnD 2e Character Sheet",
-  "version": "0.0.1",
-  "minAppVersion": "0.0.1",
+  "version": "1.0.0",
+  "minAppVersion": "1.0.0",
   "description": "A DnD character sheet view",
   "author": "Flint"
 }

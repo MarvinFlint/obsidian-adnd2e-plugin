@@ -1,7 +1,8 @@
 <script lang="ts">
-    import type { TFile, Vault } from 'obsidian';
+    import type { TFile, Vault, MarkdownView, Editor } from 'obsidian';
     import { type Item, type Equipment, type FieldType, type FieldSchema, ITEM_FIELDS, type EquipmentSlot } from './types'
-    import { EQUIPMENT_SLOTS } from './types';
+    import { EQUIPMENT_SLOTS, AVAILABLE_CLASSES } from './types';
+    import { type Proficiency, type ProficiencyType } from './types';
 
     export let fileData: Record<string, any> = {};
     export let activeFile: TFile | null = null;
@@ -11,14 +12,11 @@
 
     let characterName: string = fileData.characterName ?? '';
     let characterAge: number = fileData.characterAge ?? 18;
+    let characterWeight: number = fileData.characterWeight ?? null;
+    let characterBackground: string = fileData.characterBackground ?? '';
     let characterClasses: Array<any> = fileData.characterClasses ?? [];
-    const availableClasses: Array<string> = [
-        'Fighter',
-        'Ranger',
-        'Cleric',
-        'Thief',
-        'Wizard'
-    ]
+
+    
     let attributes: Array<any> = fileData.attributes ?? [
         { name: 'Strength', value: 10, abbr: 'STR' },
         { name: 'Dexterity', value: 10, abbr: 'DEX' },
@@ -28,8 +26,14 @@
         { name: 'Charisma', value: 10, abbr: 'CHA' },
     ];
 
+    let weaponProficiencies: Array<Proficiency> = fileData.weaponProficiencies ?? [];
+    let nonWeaponProficiencies: Array<Proficiency> = fileData.nonWeaponProficiencies ?? [];
+
     let inventory: Array<Item> = fileData.inventory ?? [];
     let equipment: Equipment = fileData.equipment ?? {};
+
+    $: inventoryWeight = inventory.reduce((sum, item) => sum + (Number(item.weight) || 0) * item.quantity, 0);
+    $: totalWeight = inventoryWeight + characterWeight;
 
     $: equippedItems = EQUIPMENT_SLOTS.map(slot => ({
         slot,
@@ -39,10 +43,18 @@
     async function saveData(){
         clearTimeout(saveTimeout);
         saveTimeout = window.setTimeout(async () => {
-            console.log('saving, activeFile is:', activeFile);
             if (!activeFile) return;
             const classesToSave = characterClasses.filter(c => c.className.trim() !== '');
-            await vault.modify(activeFile, JSON.stringify({ characterName, attributes, characterClasses : classesToSave, inventory, equipment }))
+            await vault.modify(activeFile, JSON.stringify({ 
+                characterName, 
+                characterBackground,
+                attributes,
+                weaponProficiencies,
+                nonWeaponProficiencies, 
+                characterClasses : classesToSave, 
+                inventory, 
+                equipment 
+            }))
         })
     }
 
@@ -52,6 +64,19 @@
 
     function removeCharacterClass(index: number){
         characterClasses = characterClasses.filter((_, i) => i !== index);
+        saveData();
+    }
+
+    function addProficiency(type: ProficiencyType){        
+        type === 'weapon' ? 
+            weaponProficiencies = [...weaponProficiencies, { name: '', type: type, slots: 0, source: null }]
+            : nonWeaponProficiencies =  [...nonWeaponProficiencies, { name: '', type: type, slots: 0, source: null }]
+    }
+
+    function removeProficiency(index: number, type: string){
+        type === 'weapon' ?
+            weaponProficiencies = weaponProficiencies.filter((_, i) => i !== index)
+            : nonWeaponProficiencies = nonWeaponProficiencies.filter((_, i) => i !== index);
         saveData();
     }
 
@@ -202,14 +227,21 @@
             <input type="text" name="charactername" bind:value={ characterName } on:input={ saveData } />
             <label for="characterage">Age</label>
             <input type="number" name="characterage" bind:value={ characterAge } on:input={ saveData } />
-        </div>       
+            <label for="characterweight">Weight</label>
+            <input type="number" name="characterweight" bind:value= { characterWeight } on:input={ saveData } />
+            <span>Total Weight: { totalWeight }</span>
+        </div>    
+        <div class="info-item character-background">
+            <h2>Background</h2>
+            <textarea bind:value={ characterBackground } on:input={ saveData } />
+        </div>   
         <div class="info-item character-classes">
             <h2>Classes</h2>
             {#each characterClasses as characterClass, i}
             <div class="characterClass">
                 <input type="number" bind:value={ characterClass.classLevel } on:input={ saveData } />
                 <select bind:value={ characterClass.className } on:change={ saveData }>
-                    {#each availableClasses as availableClass}
+                    {#each AVAILABLE_CLASSES as availableClass}
                     <option value="{ availableClass }">{ availableClass }</option>
                     {/each}
                 </select>
@@ -221,13 +253,49 @@
     </section>
     <section id="attributes">
         <h2>Stats</h2>
-        {#each attributes as attribute}
-            <label for="{ attribute.name }-attribute">{ attribute.abbr }</label>
-            <input type="number" name="{ attribute.name }-attribute" bind:value={ attribute.value } on:input={ saveData } />
-        {/each}
+        <ul class="attributes-list">
+            {#each attributes as attribute}
+            <li>
+                <label for="{ attribute.name }-attribute">{ attribute.abbr }</label>
+                <input type="number" name="{ attribute.name }-attribute" bind:value={ attribute.value } on:input={ saveData } />
+            </li>
+            {/each}
+        </ul>
+    </section>
+    <section id="proficiency">
+        <h2>Proficiencies</h2>
+        <div class="proficiency-section weapon-proficiency">
+            <h3>Weapons</h3>
+            <ul>
+                {#each weaponProficiencies as weaponProficiency, i}
+                <li class="weapon-proficiency">
+                    <input class="proficiency-input" type="text" placeholder="Name" bind:value= { weaponProficiency.name } on:input={ saveData } />
+                    <input class="proficiency-input" type="number" placeholder="# of Slots" bind:value= { weaponProficiency.slots } on:input={ saveData } />
+                    <input class="proficiency-input" type="text" placeholder="Source" bind:value= { weaponProficiency.source } on:input={ saveData } />
+                    <button on:click={ () => removeProficiency(i, weaponProficiency.type) }>-</button>
+                </li>
+                {/each}
+            </ul>
+            <button on:click={ () => addProficiency('weapon') }>+</button>
+        </div>
+        <div class="proficiency-section non-weapon-proficiency">
+            <h3>Non-Weapon</h3>
+            <ul>
+                {#each nonWeaponProficiencies as nonWeaponProficiency, i}
+                <li class="non-weapon-proficiency">
+                    <input class="proficiency-input" type="text" placeholder="Name" bind:value= { nonWeaponProficiency.name } on:input={ saveData } />
+                    <input class="proficiency-input" type="number" placeholder="# of Slots" bind:value= { nonWeaponProficiency.slots } on:input={ saveData } />
+                    <input class="proficiency-input" type="text" placeholder="Source" bind:value= { nonWeaponProficiency.source } on:input={ saveData } />
+                    <button on:click={ () => removeProficiency(i, nonWeaponProficiency.type) }>-</button>
+                </li>
+                {/each}                
+            </ul>
+            <button on:click={ () => addProficiency('non-weapon') }>+</button>
+        </div>
     </section>
     <section id="inventory">
         <h2>Inventory</h2>
+        <span>Total Weight: { inventoryWeight }</span>
         <ul>
         {#each inventory as item}
             <li class="item-entry">
@@ -258,26 +326,49 @@
     </section>
 </main>
 
-<style>
+<style lang="scss">
+    main{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    #character-info{
+        display: flex;
+        gap: 20px;
+    }
     .character-basics{
         display: flex;
         flex-direction: column;
         align-items: flex-start;
     }
+    .character-background
     #attributes{
         display: flex;
         flex-direction: column;
         align-items: flex-start;
+        width: 150px;
     }
-
+    .attributes-list{
+        li{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            input{
+                width: 40px;
+                text-align: center;
+            }
+        }        
+    }
     .character-classes{
         display: flex;
         flex-direction: column;
         align-items: flex-start;
     }
 
-    #inventory ul{
+    ul{
         list-style-type: none;
+        padding: 0;
     }
 
     :global(.add-item-wrapper){
