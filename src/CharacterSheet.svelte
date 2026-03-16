@@ -25,19 +25,25 @@
         { name: 'Charisma', value: 10, abbr: 'CHA' },
     ];
 
+    let healthPoints: number = fileData.healthPoints ?? 0;
+    let calculateArmorClassAutomatically: boolean = fileData.calculateArmorClassAutomatically ?? false;
+    
     let weaponProficiencies: Array<Proficiency> = fileData.weaponProficiencies ?? [];
     let nonWeaponProficiencies: Array<Proficiency> = fileData.nonWeaponProficiencies ?? [];
 
     let inventory: Array<Item> = fileData.inventory ?? [];
     let equipment: Equipment = fileData.equipment ?? {};
 
-    $: inventoryWeight = inventory.reduce((sum, item) => sum + (Number(item.weight) || 0) * item.quantity, 0);
+    $: inventoryWeight = inventory.reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
     $: totalWeight = inventoryWeight + characterWeight;
 
     $: equippedItems = EQUIPMENT_SLOTS.map(slot => ({
         slot,
         item: inventory.find(i => i.id === equipment[slot]) ?? null
     }));
+
+    let manualArmorClass = fileData.manualArmorClass ?? 10;
+    $: armorClass = calculateArmorClassAutomatically ? calculateArmorClass(equippedItems, attributes) : manualArmorClass;
 
     async function saveData(){
         clearTimeout(saveTimeout);
@@ -47,7 +53,13 @@
             await vault.modify(activeFile, JSON.stringify({ 
                 characterName, 
                 characterBackground,
+                characterWeight,
+                characterAge,
                 attributes,
+                healthPoints,
+                armorClass,
+                manualArmorClass,
+                calculateArmorClassAutomatically,
                 weaponProficiencies,
                 nonWeaponProficiencies, 
                 characterClasses : classesToSave, 
@@ -167,6 +179,11 @@
         saveData();
     }
 
+    function removeItem(index: number){
+        inventory = inventory.filter((_,i) => i !== index);
+        saveData();
+    }
+
     function getItemValues(): Item {
         const getItemValue = (key: string) => {
             return document.getElementById(`item-field-${ key }`) as HTMLInputElement | HTMLSelectElement
@@ -213,38 +230,44 @@
         inventory = [ ...inventory ];
         saveData();
     }
+
+    function calculateArmorClass(equipped: typeof equippedItems, attrs: typeof attributes):string{
+        const base = 10;
+        const dexBonus = Math.floor((attrs[1].value - 10) / 2);
+        const armorClassFromItems = equipped.reduce((totalItemAc, { item }) => { return totalItemAc + (item ? (Number(item.armorClass) || 0) + (Number(item.magicBonus) || 0) : 0)}, 0)
+        const totalArmorClass:number = base + dexBonus + armorClassFromItems;
+        return String(totalArmorClass);
+    }
 </script>
 
 <main class="sheet">
-
-    <!-- ── HEADER ── -->
     <header class="sheet-header">
-        <input class="name-input" type="text" placeholder="Character Name" bind:value={characterName} on:input={saveData} />
+        <input class="name-input" type="text" placeholder="Character Name" bind:value={ characterName } on:input={ saveData } />
         <div class="header-meta">
             <div class="meta-pair">
                 <span class="meta-label">Age</span>
-                <input class="meta-input" type="number" bind:value={characterAge} on:input={saveData} />
+                <input class="meta-input" type="number" bind:value={ characterAge } on:input={ saveData } />
             </div>
             <div class="meta-pair">
                 <span class="meta-label">Weight</span>
-                <input class="meta-input" type="number" bind:value={characterWeight} on:input={saveData} />
+                <input class="meta-input" type="number" bind:value={ characterWeight } on:input={ saveData } />
             </div>
             <div class="meta-pair">
                 <span class="meta-label">Total</span>
-                <span class="meta-value">{totalWeight} lbs</span>
+                <span class="meta-value">{ totalWeight } lbs</span>
             </div>
             <div class="classes-inline">
-                {#each characterClasses as characterClass, i}
+                { #each characterClasses as characterClass, i }
                 <div class="class-tag">
-                    <select bind:value={characterClass.className} on:change={saveData}>
-                        {#each AVAILABLE_CLASSES as availableClass}
-                        <option value={availableClass}>{availableClass}</option>
-                        {/each}
+                    <select bind:value={characterClass.className} on:change={ saveData }>
+                        { #each AVAILABLE_CLASSES as availableClass }
+                        <option value={ availableClass }>{ availableClass }</option>
+                        { /each }
                     </select>
-                    <input class="level-input" type="number" bind:value={characterClass.classLevel} on:input={saveData} />
-                    <button class="btn-remove" on:click={() => removeCharacterClass(i)}>×</button>
+                    <input class="level-input" type="number" bind:value={ characterClass.classLevel } on:input={ saveData } />
+                    <button class="btn-remove" on:click={ () => removeCharacterClass(i) }>×</button>
                 </div>
-                {/each}
+                { /each }
                 <button class="btn-add-inline" on:click={addCharacterClass}>+ Class</button>
             </div>
         </div>
@@ -254,28 +277,44 @@
             <section class="panel">
                 <h3 class="panel-title">Attributes</h3>
                 <div class="attr-grid">
-                    {#each attributes as attribute}
+                    { #each attributes as attribute }
                     <div class="attr-block">
-                        <span class="attr-abbr">{attribute.abbr}</span>
-                        <input class="attr-input" type="number" bind:value={attribute.value} on:input={saveData} />
+                        <span class="attr-abbr">{ attribute.abbr }</span>
+                        <input class="attr-input" type="number" bind:value={ attribute.value } on:input={ saveData } />
                     </div>
-                    {/each}
+                    { /each }
                 </div>
+            </section>
+            <section class="panel">
+                <h3 class="panel-title">Stats</h3>
+                <div class="stat-block">
+                    <span class="stat-abbr">HP</span>
+                    <input class="hp-input" type="number" bind:value={ healthPoints } on:input={ saveData } />
+                </div>
+                <div class="stat-block">  
+                    <span class="stat-abbr">AC</span>             
+                    { #if calculateArmorClassAutomatically }
+                    <input class="armor-class-input" disabled type="number" placeholder="{ armorClass }" />
+                    { :else }
+                    <input class="armor-class-input" type="number" placeholder="Armor Class" bind:value={ manualArmorClass } on:input={ saveData }/>
+                    { /if }
+                </div> 
+                <span class="auto-calc">Auto-calculate AC?<input type="checkbox" bind:checked={ calculateArmorClassAutomatically } on:change={ saveData } /></span>
             </section>
             <section class="panel">
                 <h3 class="panel-title">Equipment</h3>
                 <div class="equipment-list">
-                    {#each equippedItems as { slot, item }}
+                    { #each equippedItems as { slot, item } }
                     <div class="slot-row">
-                        <span class="slot-label">{slot.replace('_', ' ')}</span>
-                        {#if item}
-                        <span class="slot-item-name">{item.name}</span>
-                        <button class="btn-unequip" on:click={() => unequipItem(item)}>−</button>
-                        {:else}
+                        <span class="slot-label">{ slot.replace('_', ' ') }</span>
+                        { #if item }
+                        <span class="slot-item-name">{ item.name }</span>
+                        <button class="btn-unequip" on:click={ () => unequipItem(item) }>−</button>
+                        { :else }
                         <span class="slot-empty">—</span>
-                        {/if}
+                        { /if }
                     </div>
-                    {/each}
+                    { /each }
                 </div>
             </section>
         </div>
@@ -286,63 +325,64 @@
                     <div class="prof-group">
                         <div class="prof-group-header">
                             <span class="prof-group-label">Weapon</span>
-                            <button class="btn-add-inline" on:click={() => addProficiency('weapon')}>+</button>
+                            <button class="btn-add-inline" on:click={ () => addProficiency('weapon') }>+</button>
                         </div>
-                        {#each weaponProficiencies as prof, i}
+                        { #each weaponProficiencies as prof, i }
                         <div class="prof-row">
-                            <input class="prof-name" type="text" placeholder="Name" bind:value={prof.name} on:input={saveData} />
-                            <input class="prof-slots" type="number" placeholder="Slots" bind:value={prof.slots} on:input={saveData} />
-                            <input class="prof-source" type="text" placeholder="Source" bind:value={prof.source} on:input={saveData} />
-                            <button class="btn-remove" on:click={() => removeProficiency(i, prof.type)}>×</button>
+                            <input class="prof-name" type="text" placeholder="Name" bind:value={ prof.name } on:input={ saveData } />
+                            <input class="prof-slots" type="number" placeholder="Slots" bind:value={ prof.slots } on:input={ saveData } />
+                            <input class="prof-source" type="text" placeholder="Source" bind:value={ prof.source } on:input={ saveData } />
+                            <button class="btn-remove" on:click={ () => removeProficiency(i, prof.type) }>×</button>
                         </div>
-                        {/each}
+                        { /each }
                     </div>
                     <div class="prof-group">
                         <div class="prof-group-header">
                             <span class="prof-group-label">Non-Weapon</span>
-                            <button class="btn-add-inline" on:click={() => addProficiency('non-weapon')}>+</button>
+                            <button class="btn-add-inline" on:click={ () => addProficiency('non-weapon') }>+</button>
                         </div>
-                        {#each nonWeaponProficiencies as prof, i}
+                        { #each nonWeaponProficiencies as prof, i }
                         <div class="prof-row">
-                            <input class="prof-name" type="text" placeholder="Name" bind:value={prof.name} on:input={saveData} />
-                            <input class="prof-slots" type="number" placeholder="Slots" bind:value={prof.slots} on:input={saveData} />
-                            <input class="prof-source" type="text" placeholder="Source" bind:value={prof.source} on:input={saveData} />
-                            <button class="btn-remove" on:click={() => removeProficiency(i, prof.type)}>×</button>
+                            <input class="prof-name" type="text" placeholder="Name" bind:value={ prof.name } on:input={ saveData } />
+                            <input class="prof-slots" type="number" placeholder="Slots" bind:value={ prof.slots } on:input={ saveData } />
+                            <input class="prof-source" type="text" placeholder="Source" bind:value={ prof.source } on:input={ saveData } />
+                            <button class="btn-remove" on:click={ () => removeProficiency(i, prof.type) }>×</button>
                         </div>
-                        {/each}
+                        { /each }
                     </div>
                 </div>
             </section>
             <section class="panel">
                 <div class="panel-title-row">
                     <h3 class="panel-title">Inventory</h3>
-                    <span class="weight-badge">{inventoryWeight} lbs</span>
-                    <button class="btn-add-inline" on:click={openAddItemPanel}>+ Item</button>
+                    <span class="weight-badge">{ inventoryWeight } lbs</span>
+                    <button class="btn-add-inline" on:click={ openAddItemPanel }>+ Item</button>
                 </div>
                 <div class="inventory-header-row">
                     <span>Name</span>
                     <span>Wt</span>
                     <span>Qty</span>
                     <span>Description</span>
-                    <span></span>
+                    <span>Equip</span>
                 </div>
-                {#each inventory as item}
+                {#each inventory as item, i}
                 <div class="inventory-row">
-                    <input type="text" placeholder="Name" bind:value={item.name} on:input={saveData} />
-                    <input type="number" placeholder="0" bind:value={item.weight} on:input={saveData} />
-                    <input type="number" placeholder="1" bind:value={item.quantity} on:input={saveData} />
-                    <input type="text" placeholder="—" bind:value={item.description} on:input={saveData} />
-                    {#if item.equippable}
-                    <input type="checkbox" checked={item.equipped} on:change={() => item.equipped ? unequipItem(item) : equipItem(item)} />
-                    {:else}
+                    <input type="text" placeholder="Name" bind:value={ item.name } on:input={ saveData } />
+                    <input type="number" placeholder="0" bind:value={ item.weight } on:input={ saveData } />
+                    <input type="number" placeholder="1" bind:value={ item.quantity } on:input={ saveData } />
+                    <input type="text" placeholder="—" bind:value={ item.description } on:input={ saveData } />
+                    { #if item.equippable }
+                    <input type="checkbox" checked={ item.equipped } on:change={() => item.equipped ? unequipItem(item) : equipItem(item)} />
+                    { :else }
                     <span></span>
-                    {/if}
+                    { /if }
+                    <button class="btn-remove" on:click={ () => removeItem(i) }>×</button>
                 </div>
-                {/each}
+                { /each }
             </section>
             <section class="panel">
                 <h3 class="panel-title">Background</h3>
-                <textarea class="background-area" bind:value={characterBackground} on:input={saveData} placeholder="Character history, notes, personality..."></textarea>
+                <textarea class="background-area" bind:value={ characterBackground } on:input={ saveData } placeholder="Character history, notes, personality..."></textarea>
             </section>
         </div>
     </div>
@@ -375,10 +415,17 @@
     input:focus, select:focus, textarea:focus {
         border-bottom-color: var(--interactive-accent);
     }
-    input[type="checkbox"] {
+    input[type="checkbox"], :global(#item-field-equippable) {
         width: auto;
+        min-width: auto;
+        height: auto;
         border: none;
+        border-bottom: none;
         cursor: pointer;
+        appearance: auto;
+        -webkit-appearance: auto;
+        flex-shrink: 0;
+        justify-self: flex-start;
     }
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
@@ -496,7 +543,7 @@
         grid-template-columns: 1fr 1fr;
         gap: 6px;
     }
-    .attr-block {
+    .attr-block, .stat-block {
         display: flex;
         align-items: center;
         gap: 6px;
@@ -514,7 +561,10 @@
         font-weight: var(--font-semibold);
         font-size: var(--font-ui-medium);
     }
-
+    .auto-calc{
+        display: flex;
+        gap: 5px;
+    }   
     .equipment-list {
         display: flex;
         flex-direction: column;
@@ -571,7 +621,7 @@
 
     .inventory-header-row {
         display: grid;
-        grid-template-columns: 1fr 44px 44px 1fr 20px;
+        grid-template-columns: 1fr 44px 44px 1fr 20px 20px;
         gap: 4px;
         font-size: var(--font-ui-smaller);
         color: var(--text-faint);
@@ -579,7 +629,7 @@
     }
     .inventory-row {
         display: grid;
-        grid-template-columns: 1fr 44px 44px 1fr 20px;
+        grid-template-columns: 1fr 44px 44px 1fr 20px 18px;
         gap: 4px;
         align-items: center;
         border-bottom: 1px solid var(--background-modifier-border-hover);
