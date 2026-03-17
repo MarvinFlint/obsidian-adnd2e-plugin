@@ -70,7 +70,8 @@
                 nonWeaponProficiencies, 
                 characterClasses : classesToSave, 
                 inventory, 
-                equipment 
+                equipment,
+                spellSlots
             }))
         })
     }
@@ -435,7 +436,11 @@
                         <div class="spellslot-row-content">
                             { #each (spellSlots[level] ?? []) as spell, i }
                             <div class="spellslot-entry">
+                                { #if spell.used }
+                                <input type="text" disabled placeholder="Spell name" bind:value={ spell.spellName } on:input={ saveData } />
+                                { :else }                
                                 <input type="text" placeholder="Spell name" bind:value={ spell.spellName } on:input={ saveData } />
+                                { /if }
                                 <input type="checkbox" bind:checked={ spell.used } on:change={ saveData } />
                                 <button class="btn-remove" on:click={ () => removeSpell(level, i) }>×</button>
                             </div>
