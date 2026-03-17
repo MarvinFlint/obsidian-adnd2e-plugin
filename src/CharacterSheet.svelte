@@ -426,20 +426,22 @@
             </section>
             <section class="panel">
                 <h3 class="panel-title">Spellslots</h3>
-                <div class="spellslot-columns">
+                <div class="spellslot-rows">
                     { #each SPELL_LEVELS as level }
-                    <div class="spellslot-column">
-                        <div class="spellslot-column-header">
-                            <span>Level { level }</span>
+                    <div class="spellslot-row">
+                        <div class="spellslot-row-header">
+                            <span>Level { level }</span>                            
+                        </div>
+                        <div class="spellslot-row-content">
+                            { #each (spellSlots[level] ?? []) as spell, i }
+                            <div class="spellslot-entry">
+                                <input type="text" placeholder="Spell name" bind:value={ spell.spellName } on:input={ saveData } />
+                                <input type="checkbox" bind:checked={ spell.used } on:change={ saveData } />
+                                <button class="btn-remove" on:click={ () => removeSpell(level, i) }>×</button>
+                            </div>
+                            { /each }
                             <button class="btn-add-inline" on:click={ () => addSpell(level) }>+</button>
-                        </div>
-                        { #each (spellSlots[level] ?? []) as spell, i }
-                        <div class="spellslot-entry">
-                            <input type="text" placeholder="Spell name" bind:value={ spell.spellName } on:input={ saveData } />
-                            <input type="checkbox" bind:checked={ spell.used } on:change={ saveData } />
-                            <button class="btn-remove" on:click={ () => removeSpell(level, i) }>×</button>
-                        </div>
-                        { /each }
+                        </div>                        
                     </div>
                     { /each }
                 </div>
@@ -801,30 +803,35 @@
         color: var(--text-error);
     }
 
-    .spellslot-columns {
-        display: grid;
-        grid-template-columns: repeat(9, 1fr);
-        gap: 8px;
-        align-items: start;
-    }
-    .spellslot-column {
+    .spellslot-rows {
         display: flex;
         flex-direction: column;
+        gap: 8px;
+    }
+    .spellslot-row {
+        display: flex;
         gap: 4px;
     }
-    .spellslot-column-header {
+    .spellslot-row-header {
         display: flex;
+        min-width: 80px;
+        width:80px;
         align-items: center;
         justify-content: space-between;
         border-bottom: 1px solid var(--background-modifier-border);
         padding-bottom: 4px;
         margin-bottom: 2px;
     }
-    .spellslot-column-header span {
+    .spellslot-row-header span {
         font-size: var(--font-ui-smaller);
         font-weight: var(--font-semibold);
         color: var(--text-muted);
     }
+    .spellslot-row-content{
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
     .spellslot-entry {
         display: flex;
         align-items: center;
