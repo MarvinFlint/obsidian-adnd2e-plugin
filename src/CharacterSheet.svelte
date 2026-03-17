@@ -15,6 +15,7 @@
     let characterName: string = fileData.characterName ?? '';
     let characterAge: number = fileData.characterAge ?? 18;
     let characterWeight: number = fileData.characterWeight ?? null;
+    let characterHeight: number = fileData.characterHeight ?? 0;
     let characterBackground: string = fileData.characterBackground ?? '';
     let characterClasses: Array<any> = fileData.characterClasses ?? [];
 
@@ -59,6 +60,7 @@
                 characterName, 
                 characterBackground,
                 characterWeight,
+                characterHeight,
                 characterAge,
                 attributes,
                 maxHealthPoints,
@@ -241,7 +243,7 @@
     function calculateArmorClass(equipped: typeof equippedItems, attrs: typeof attributes):string{
         const base = 10;
         const dexBonus = Math.floor((attrs[1].value - 10) / 2);
-        const armorClassFromItems = equipped.filter((slot, i) => slot.slot !== 'main_hand').reduce((totalItemAc, { item }) => { return totalItemAc + (item ? (Number(item.armorClass) || 0) + (Number(item.magicBonus) || 0) : 0)}, 0)
+        const armorClassFromItems = equipped.filter((slot, _) => slot.slot !== 'main_hand').reduce((totalItemAc, { item }) => { return totalItemAc + (item ? (Number(item.armorClass) || 0) + (Number(item.magicBonus) || 0) : 0)}, 0)
         const totalArmorClass:number = base + dexBonus + armorClassFromItems;
         return String(totalArmorClass);
     }
@@ -268,6 +270,10 @@
             <div class="meta-pair">
                 <span class="meta-label">Age</span>
                 <input class="meta-input" type="number" bind:value={ characterAge } on:input={ saveData } />
+            </div>
+            <div class="meta-pair">
+                <span class="meta-label">Height</span>
+                <input class="meta-input" type="number" bind:value={ characterHeight } on:input={ saveData } />
             </div>
             <div class="meta-pair">
                 <span class="meta-label">Weight</span>
