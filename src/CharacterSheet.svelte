@@ -25,7 +25,8 @@
         { name: 'Charisma', value: 10, abbr: 'CHA' },
     ];
 
-    let healthPoints: number = fileData.healthPoints ?? 0;
+    let maxHealthPoints: number = fileData.maxHealthPoints ?? 0;
+    let currentHealthPoints: number = fileData.currentHealthPoints ?? 0;
     let calculateArmorClassAutomatically: boolean = fileData.calculateArmorClassAutomatically ?? false;
     
     let weaponProficiencies: Array<Proficiency> = fileData.weaponProficiencies ?? [];
@@ -56,7 +57,8 @@
                 characterWeight,
                 characterAge,
                 attributes,
-                healthPoints,
+                maxHealthPoints,
+                currentHealthPoints,
                 armorClass,
                 manualArmorClass,
                 calculateArmorClassAutomatically,
@@ -289,7 +291,9 @@
                 <h3 class="panel-title">Stats</h3>
                 <div class="stat-block">
                     <span class="stat-abbr">HP</span>
-                    <input class="hp-input" type="number" bind:value={ healthPoints } on:input={ saveData } />
+                    <input class="current-hp-input" type="number" bind:value={ currentHealthPoints } on:input={ saveData } />
+                    /
+                    <input class="max-hp-input" type="number" bind:value={ maxHealthPoints } on:input={ saveData } />
                 </div>
                 <div class="stat-block">  
                     <span class="stat-abbr">AC</span>             
