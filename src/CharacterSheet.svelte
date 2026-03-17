@@ -1,12 +1,14 @@
 <script lang="ts">
     import type { TFile, Vault, MarkdownView, Editor } from 'obsidian';
     import { type Item, type Equipment, type FieldType, type FieldSchema, ITEM_FIELDS, type EquipmentSlot } from './types'
-    import { EQUIPMENT_SLOTS, AVAILABLE_CLASSES } from './types';
+    import { EQUIPMENT_SLOTS, AVAILABLE_CLASSES, SPELL_LEVELS } from './types';
     import { type Proficiency, type ProficiencyType } from './types';
+    import { type SpellSlots } from './types';
 
     export let fileData: Record<string, any> = {};
     export let activeFile: TFile | null = null;
     export let vault: Vault;
+    export let containerEl: HTMLElement;
 
     let saveTimeout: number;
 
@@ -45,6 +47,8 @@
 
     let manualArmorClass = fileData.manualArmorClass ?? 10;
     $: armorClass = calculateArmorClassAutomatically ? calculateArmorClass(equippedItems, attributes) : manualArmorClass;
+
+    let spellSlots: SpellSlots = fileData.spellSlots ?? [];
 
     async function saveData(){
         clearTimeout(saveTimeout);
@@ -94,7 +98,7 @@
     }
 
     function openAddItemPanel() {
-        const viewContainer = document.querySelector('.view-content');
+        const viewContainer = containerEl.querySelector('.view-content');
         if(!viewContainer) return;
         
         const wrapper = document.createElement('div');
@@ -236,13 +240,27 @@
     function calculateArmorClass(equipped: typeof equippedItems, attrs: typeof attributes):string{
         const base = 10;
         const dexBonus = Math.floor((attrs[1].value - 10) / 2);
-        const armorClassFromItems = equipped.reduce((totalItemAc, { item }) => { return totalItemAc + (item ? (Number(item.armorClass) || 0) + (Number(item.magicBonus) || 0) : 0)}, 0)
+        const armorClassFromItems = equipped.filter((slot, i) => slot.slot !== 'main_hand').reduce((totalItemAc, { item }) => { return totalItemAc + (item ? (Number(item.armorClass) || 0) + (Number(item.magicBonus) || 0) : 0)}, 0)
         const totalArmorClass:number = base + dexBonus + armorClassFromItems;
         return String(totalArmorClass);
     }
+
+    function addSpell(level: number) {
+        const current = spellSlots[level] ?? [];
+        spellSlots = { ...spellSlots, [level]: [...current, { spellName: '', used: false }] };
+        saveData();
+    }
+
+    function removeSpell(level: number, index: number) {
+        spellSlots = { 
+            ...spellSlots, 
+            [level]: (spellSlots[level] ?? []).filter((_, i) => i !== index) 
+        };
+        saveData();
+    }
 </script>
 
-<main class="sheet">
+<main class="sheet" lang="en">
     <header class="sheet-header">
         <input class="name-input" type="text" placeholder="Character Name" bind:value={ characterName } on:input={ saveData } />
         <div class="header-meta">
@@ -369,24 +387,62 @@
                     <span>Description</span>
                     <span>Equip</span>
                 </div>
-                {#each inventory as item, i}
+                { #each inventory as item, i }
                 <div class="inventory-row">
                     <input type="text" placeholder="Name" bind:value={ item.name } on:input={ saveData } />
                     <input type="number" placeholder="0" bind:value={ item.weight } on:input={ saveData } />
                     <input type="number" placeholder="1" bind:value={ item.quantity } on:input={ saveData } />
                     <input type="text" placeholder="—" bind:value={ item.description } on:input={ saveData } />
                     { #if item.equippable }
-                    <input type="checkbox" checked={ item.equipped } on:change={() => item.equipped ? unequipItem(item) : equipItem(item)} />
+                    <input type="checkbox" checked={ item.equipped } on:change={ () => item.equipped ? unequipItem(item) : equipItem(item) } />
+                    <button class="btn-expand" on:click={ () => { item.expanded = !item.expanded; inventory = [...inventory]; } }>
+                        <span class:expanded={ item.expanded }>▾</span>
+                    </button>
                     { :else }
                     <span></span>
-                    { /if }
+                    <span></span>
+                    { /if }                    
                     <button class="btn-remove" on:click={ () => removeItem(i) }>×</button>
                 </div>
+                { #if item.expanded }
+                <div class="inventory-detail-row">
+                    <span class="detail-label">AC</span>
+                    <input type="number" placeholder="—" bind:value={ item.armorClass } on:input={ saveData } />
+                    <span class="detail-label">Magic Bonus</span>
+                    <input type="number" placeholder="—" bind:value={ item.magicBonus } on:input={ saveData } />
+                    <span class="detail-label">Slot</span>
+                    <select bind:value={item.slot} on:change={ saveData }>
+                        { #each ['none', ...EQUIPMENT_SLOTS] as slot }
+                        <option value={ slot === 'none' ? null : slot }>{ slot.replace('_', ' ') }</option>
+                        { /each }
+                    </select>
+                </div>
+                { /if }
                 { /each }
             </section>
             <section class="panel">
                 <h3 class="panel-title">Background</h3>
                 <textarea class="background-area" bind:value={ characterBackground } on:input={ saveData } placeholder="Character history, notes, personality..."></textarea>
+            </section>
+            <section class="panel">
+                <h3 class="panel-title">Spellslots</h3>
+                <div class="spellslot-columns">
+                    { #each SPELL_LEVELS as level }
+                    <div class="spellslot-column">
+                        <div class="spellslot-column-header">
+                            <span>Level { level }</span>
+                            <button class="btn-add-inline" on:click={ () => addSpell(level) }>+</button>
+                        </div>
+                        { #each (spellSlots[level] ?? []) as spell, i }
+                        <div class="spellslot-entry">
+                            <input type="text" placeholder="Spell name" bind:value={ spell.spellName } on:input={ saveData } />
+                            <input type="checkbox" bind:checked={ spell.used } on:change={ saveData } />
+                            <button class="btn-remove" on:click={ () => removeSpell(level, i) }>×</button>
+                        </div>
+                        { /each }
+                    </div>
+                    { /each }
+                </div>
             </section>
         </div>
     </div>
@@ -415,6 +471,10 @@
         padding: 2px 4px;
         outline: none;
         width: 100%;
+    }
+    select option{
+        background: var(--background-primary);
+        color: var(--text-normal);
     }
     input:focus, select:focus, textarea:focus {
         border-bottom-color: var(--interactive-accent);
@@ -587,6 +647,7 @@
     }
     .slot-item-name {
         color: var(--text-normal);
+        overflow-wrap: break-word;
     }
     .slot-empty {
         color: var(--text-faint);
@@ -625,7 +686,7 @@
 
     .inventory-header-row {
         display: grid;
-        grid-template-columns: 1fr 44px 44px 1fr 20px 20px;
+        grid-template-columns: 1fr 44px 44px 1fr 20px 18px 20px;
         gap: 4px;
         font-size: var(--font-ui-smaller);
         color: var(--text-faint);
@@ -633,7 +694,7 @@
     }
     .inventory-row {
         display: grid;
-        grid-template-columns: 1fr 44px 44px 1fr 20px 18px;
+        grid-template-columns: 1fr 44px 44px 1fr 20px 18px 20px;
         gap: 4px;
         align-items: center;
         border-bottom: 1px solid var(--background-modifier-border-hover);
@@ -641,6 +702,50 @@
     }
     .inventory-row:last-child {
         border-bottom: none;
+    }
+
+    .btn-expand {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0 4px;
+        font-size: var(--font-ui-medium);
+        width: auto;
+        transition: transform 0.15s ease;
+        display: inline-block;
+    }
+    .btn-expand span {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        transition: transform 0.15s ease;
+    }
+    .btn-expand span.expanded {
+        transform: rotate(180deg);
+    }
+    .btn-expand:hover {
+        color: var(--text-normal);
+    }
+    .inventory-detail-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 4px 8px 6px 8px;
+        background: var(--background-secondary);
+        border-bottom: 1px solid var(--background-modifier-border);
+        font-size: var(--font-ui-smaller);
+    }
+    .inventory-detail-row input,
+    .inventory-detail-row select {
+        width: 80px;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+    .detail-label {
+        color: var(--text-muted);
+        font-size: var(--font-ui-smaller);
+        white-space: nowrap;
     }
 
     .background-area {
@@ -694,6 +799,39 @@
     }
     .btn-unequip:hover {
         color: var(--text-error);
+    }
+
+    .spellslot-columns {
+        display: grid;
+        grid-template-columns: repeat(9, 1fr);
+        gap: 8px;
+        align-items: start;
+    }
+    .spellslot-column {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .spellslot-column-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--background-modifier-border);
+        padding-bottom: 4px;
+        margin-bottom: 2px;
+    }
+    .spellslot-column-header span {
+        font-size: var(--font-ui-smaller);
+        font-weight: var(--font-semibold);
+        color: var(--text-muted);
+    }
+    .spellslot-entry {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .spellslot-entry input[type="text"] {
+        min-width: 0;
     }
 
     :global(.add-item-wrapper){

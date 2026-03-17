@@ -22,7 +22,12 @@ export class CharacterSheetView extends FileView {
 
         this.component = new CharacterSheet({
             target: container,
-            props: { fileData, activeFile: this.file, vault: this.app.vault }
+            props: {   
+                    fileData, 
+                    activeFile: this.file, 
+                    vault: this.app.vault,
+                    containerEl: this.containerEl
+                }
         });
     }
 

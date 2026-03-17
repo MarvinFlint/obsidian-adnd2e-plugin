@@ -4,8 +4,8 @@ export const EQUIPMENT_SLOTS = [
     'body',
     'back',
     'gloves',
-    'off_hand',
     'main_hand',
+    'off_hand',    
     'feet',
     'ring_left',
     'ring_right',
@@ -25,6 +25,7 @@ export interface Item{
     slot: EquipmentSlot | null,
     armorClass: number | null
     magicBonus: number | null
+    expanded?: boolean
 }
 
 export type FieldType = 'text' | 'number' | 'checkbox' | 'select';
@@ -64,4 +65,14 @@ export const AVAILABLE_CLASSES: string[] = [
     'Wizard',
     'Druid',
     'Paladin'
+]
+
+export interface Spell {
+    spellName: string,
+    used: boolean
+}
+
+export type SpellSlots = Partial<Record<number, Array<Spell>>>;
+export const SPELL_LEVELS = [
+    1,2,3,4,5,6,7,8,9
 ]
