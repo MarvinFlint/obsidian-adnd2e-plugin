@@ -3,6 +3,6 @@
   "name": "ADnD 2e Character Sheet",
   "version": "1.0.0",
   "minAppVersion": "1.0.0",
-  "description": "A DnD character sheet view",
+  "description": "A DnD character sheet view to manage stats and inventory.",
   "author": "Flint"
 }

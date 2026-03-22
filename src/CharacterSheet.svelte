@@ -381,7 +381,7 @@
                     </div>
                 </div>
             </section>
-            <section class="panel">
+            <section class="panel inventory">
                 <div class="panel-title-row">
                     <h3 class="panel-title">Inventory</h3>
                     <span class="weight-badge">{ inventoryWeight } lbs</span>
@@ -697,6 +697,10 @@
         text-align: center;
     }
 
+    .inventory{
+        max-height: 200px;
+        overflow-y: scroll;
+    }
     .inventory-header-row {
         display: grid;
         grid-template-columns: 1fr 44px 44px 1fr 20px 18px 20px;
