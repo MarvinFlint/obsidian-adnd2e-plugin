@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/MarvinFlint/obsidian-adnd2e-plugin.git"
   },
-  "license": "ISC",
+  "license": "MIT",
   "author": "Flint",
   "type": "module",
   "main": "src/main.ts",

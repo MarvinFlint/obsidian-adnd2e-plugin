@@ -240,6 +240,18 @@
         saveData();
     }
 
+    function changeEquipmentSlot(item: Item, e: Event){
+        if(!item.equipped) return;
+
+        const previousSlot = Object.keys(equipment).find(slot => equipment[slot as EquipmentSlot] === item.id) as EquipmentSlot | undefined;        
+        if(!previousSlot) return;
+
+        delete equipment[previousSlot]
+        equipItem(item);
+        saveData();
+        return null;
+    }
+
     function calculateArmorClass(equipped: typeof equippedItems, attrs: typeof attributes):string{
         const base = 10;
         const dexBonus = Math.floor((attrs[1].value - 10) / 2);
@@ -418,7 +430,7 @@
                     <span class="detail-label">Magic Bonus</span>
                     <input type="number" placeholder="—" bind:value={ item.magicBonus } on:input={ saveData } />
                     <span class="detail-label">Slot</span>
-                    <select bind:value={item.slot} on:change={ saveData }>
+                    <select bind:value={item.slot} on:change={ (e) => changeEquipmentSlot(item, e) }>
                         { #each ['none', ...EQUIPMENT_SLOTS] as slot }
                         <option value={ slot === 'none' ? null : slot }>{ slot.replace('_', ' ') }</option>
                         { /each }
@@ -485,7 +497,7 @@
         outline: none;
         width: 100%;
     }
-    select option{
+    :global(select option){
         background: var(--background-primary);
         color: var(--text-normal);
     }
@@ -695,11 +707,6 @@
     }
     .prof-slots {
         text-align: center;
-    }
-
-    .inventory{
-        max-height: 200px;
-        overflow-y: scroll;
     }
     .inventory-header-row {
         display: grid;
